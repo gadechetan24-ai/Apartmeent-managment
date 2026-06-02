@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ApartEase — Register</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e1a; --surface: rgba(255,255,255,0.05); --border: rgba(255,255,255,0.10);
+      --accent: #6c9fff; --accent2: #a78bfa; --text: #e8eaf0; --muted: #8892a4;
+      --danger: #ff6b6b; --success: #4ade80;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .bg-blobs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; animation: float 14s ease-in-out infinite; }
+    .blob-1 { width: 500px; height: 500px; background: #a78bfa; top: -150px; right: -100px; }
+    .blob-2 { width: 350px; height: 350px; background: #6c9fff; bottom: -100px; left: -80px; animation-delay: -5s; }
+    @keyframes float { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-20px)} }
+
+    .card {
+      position: relative; z-index: 1;
+      background: rgba(10,14,26,0.85);
+      backdrop-filter: blur(40px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 52px 48px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .brand-name { font-family: 'DM Serif Display', serif; font-size: 1.4rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    h2 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; margin-bottom: 6px; }
+    .form-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
+    .form-sub a { color: var(--accent); text-decoration: none; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+    .input-wrap { position: relative; }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
+    input, select {
+      width: 100%; padding: 12px 16px 12px 42px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+      appearance: none;
+    }
+    select { cursor: pointer; }
+    select option { background: #1a1e2e; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,159,255,0.15); }
+    input::placeholder { color: var(--muted); }
+
+    .strength-bar { margin-top: 8px; height: 3px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .strength-fill { height: 100%; width: 0; border-radius: 4px; transition: width .3s, background .3s; }
+    .strength-label { font-size: 0.75rem; margin-top: 4px; color: var(--muted); }
+
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 10px;
+      color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 0.875rem; margin-bottom: 16px; display: none; animation: slideDown .2s ease; }
+    .alert-error { background: rgba(255,107,107,.12); border: 1px solid rgba(255,107,107,.3); color: #ff9999; }
+    .alert-success { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: #6ee7a0; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 560px) { .card { padding: 36px 24px; } .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <div class="card">
+    <div class="brand">
+      <div class="brand-icon">🏢</div>
+      <span class="brand-name">ApartEase</span>
+    </div>
+
+    <h2>Create account</h2>
+    <p class="form-sub">Already registered? <a href="/">Sign in</a></p>
+
+    <div id="alertBox" class="alert"></div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Full Name</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="fullName" placeholder="Jane Doe"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <div class="input-wrap">
+          <span class="input-icon">📱</span>
+          <input type="tel" id="phone" placeholder="+1 555 000 0000"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Email address</label>
+      <div class="input-wrap">
+        <span class="input-icon">✉️</span>
+        <input type="email" id="email" placeholder="you@example.com"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Role</label>
+      <div class="input-wrap">
+        <span class="input-icon">🎭</span>
+        <select id="role">
+          <option value="tenant">Tenant</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="Min. 6 characters" oninput="checkStrength(this.value)"/>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      <div class="strength-label" id="strengthLabel"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔐</span>
+        <input type="password" id="confirmPassword" placeholder="Repeat password"/>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="regBtn" onclick="handleRegister()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Create Account</span>
+    </button>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000';
+
+    function checkStrength(pw) {
+      const fill = document.getElementById('strengthFill');
+      const label = document.getElementById('strengthLabel');
+      let score = 0;
+      if (pw.length >= 6) score++;
+      if (pw.length >= 10) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      const levels = [
+        { w: '0%', c: 'transparent', t: '' },
+        { w: '25%', c: '#ff6b6b', t: 'Weak' },
+        { w: '50%', c: '#fbbf24', t: 'Fair' },
+        { w: '75%', c: '#60a5fa', t: 'Good' },
+        { w: '100%', c: '#4ade80', t: 'Strong' },
+      ];
+      const l = levels[Math.min(score, 4)];
+      fill.style.width = l.w; fill.style.background = l.c; label.textContent = l.t;
+    }
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('alertBox');
+      box.textContent = msg;
+      box.className = `alert alert-${type}`;
+      box.style.display = 'block';
+    }
+
+    function setLoading(on) {
+      document.getElementById('spinner').style.display = on ? 'block' : 'none';
+      document.getElementById('btnText').textContent = on ? 'Creating…' : 'Create Account';
+      document.getElementById('regBtn').disabled = on;
+    }
+
+    async function handleRegister() {
+      const full_name = document.getElementById('fullName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const role = document.getElementById('role').value;
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirmPassword').value;
+
+      if (!full_name || !email || !password) { showAlert('Name, email, and password are required.'); return; }
+      if (password !== confirm) { showAlert('Passwords do not match.'); return; }
+      if (password.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
+
+      setLoading(true);
+      try {
+        const res = await fetch(`${API}/api/users/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name, email, phone: phone || null, role, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { showAlert(data.detail || 'Registration failed.'); return; }
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        showAlert('Account created! Redirecting to dashboard…', 'success');
+        setTimeout(() => window.location.href = '/dashboard', 900);
+      } catch (err) {
+        showAlert('Cannot connect to server. Is the backend running?');
+      } finally {
+        setLoading(false);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ApartEase — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0c0f1d; --sidebar: #0e1225; --card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08); --accent: #6c9fff; --accent2: #a78bfa;
+      --text: #e8eaf0; --muted: #6b7280; --success: #4ade80; --warning: #fbbf24;
+      --danger: #f87171; --sidebar-w: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ─────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w); background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh;
+      z-index: 100; transition: transform .3s;
+    }
+    .sidebar-brand {
+      padding: 28px 20px 20px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-icon { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg,var(--accent),var(--accent2)); display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0; }
+    .brand-name { font-family: 'DM Serif Display', serif; font-size:1.2rem; background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+
+    .nav { padding: 16px 10px; flex: 1; overflow-y: auto; }
+    .nav-section { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 0 10px 8px; margin-top: 16px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      color: var(--muted); font-size: .875rem; font-weight: 500;
+      transition: background .15s, color .15s; margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.05); color: var(--text); }
+    .nav-item.active { background: rgba(108,159,255,.12); color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 22px; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--accent2); color:#fff; border-radius:20px; padding:1px 8px; font-size:.72rem; }
+
+    .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+    .user-chip { display:flex;align-items:center;gap:10px; }
+    .user-avatar { width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700; }
+    .user-info .name { font-size:.875rem;font-weight:600; }
+    .user-info .role-badge { font-size:.72rem;color:var(--muted); }
+    .logout-btn { margin-top:10px;width:100%;padding:8px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:8px;color:#f87171;font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;transition:background .2s; }
+    .logout-btn:hover { background:rgba(248,113,113,.2); }
+
+    /* ── Main ────────────────────────────── */
+    .main { margin-left: var(--sidebar-w); flex:1; display:flex;flex-direction:column; min-height:100vh; }
+    .topbar { height:60px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(12,15,29,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50; }
+    .page-title { font-family:'DM Serif Display',serif;font-size:1.3rem; }
+    .topbar-right { display:flex;align-items:center;gap:12px; }
+    .notif-btn { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;color:var(--text);font-size:18px;position:relative; }
+    .notif-dot { position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--accent2); }
+
+    .content { padding:28px;flex:1; }
+
+    /* ── Cards & Stats ───────────────────── */
+    .stats-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px; }
+    .stat-card {
+      background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:20px;position:relative;overflow:hidden;
+      transition:transform .2s,box-shadow .2s;
+    }
+    .stat-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3); }
+    .stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px; }
+    .stat-card.blue::before { background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+    .stat-card.green::before { background:linear-gradient(90deg,#4ade80,#34d399); }
+    .stat-card.yellow::before { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+    .stat-card.red::before { background:linear-gradient(90deg,#f87171,#ef4444); }
+    .stat-label { font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px; }
+    .stat-value { font-size:2rem;font-weight:700;font-family:'DM Serif Display',serif; }
+    .stat-icon { position:absolute;right:18px;top:18px;font-size:28px;opacity:.3; }
+    .stat-sub { font-size:.75rem;color:var(--muted);margin-top:4px; }
+
+    /* ── Sections ────────────────────────── */
+    .section { display:none; animation:fadeIn .25s ease; }
+    .section.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .section-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px; }
+    .section-header h3 { font-family:'DM Serif Display',serif;font-size:1.4rem; }
+    .btn { padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;transition:all .2s; }
+    .btn-accent { background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff; }
+    .btn-accent:hover { opacity:.9;transform:translateY(-1px); }
+    .btn-ghost { background:var(--card);border:1px solid var(--border);color:var(--text); }
+    .btn-ghost:hover { background:rgba(255,255,255,.08); }
+    .btn-danger { background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:#f87171; }
+    .btn-success { background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ade80; }
+
+    /* ── Table ───────────────────────────── */
+    .table-wrap { background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden; }
+    table { width:100%;border-collapse:collapse; }
+    thead th { padding:12px 16px;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border); }
+    tbody tr { transition:background .15s; }
+    tbody tr:hover { background:rgba(255,255,255,.03); }
+    tbody td { padding:13px 16px;font-size:.875rem;border-bottom:1px solid rgba(255,255,255,.04); }
+    tbody tr:last-child td { border-bottom:none; }
+
+    .badge { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600; }
+    .badge-green { background:rgba(74,222,128,.12);color:#4ade80; }
+    .badge-yellow { background:rgba(251,191,36,.12);color:#fbbf24; }
+    .badge-red { background:rgba(248,113,113,.12);color:#f87171; }
+    .badge-blue { background:rgba(108,159,255,.12);color:#6c9fff; }
+    .badge-gray { background:rgba(107,114,128,.12);color:#9ca3af; }
+    .badge-purple { background:rgba(167,139,250,.12);color:#a78bfa; }
+
+    /* ── Modal ───────────────────────────── */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#131729;border:1px solid var(--border);border-radius:20px;padding:36px;width:100%;max-width:480px;animation:modalIn .25s ease; }
+    @keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+    .modal h3 { font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:20px; }
+    .modal-footer { display:flex;gap:10px;justify-content:flex-end;margin-top:24px; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border);
+      border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;outline:none;
+      transition:border-color .2s;
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--accent); }
+    .form-group select option { background:#1a1e2e; }
+    .form-group textarea { resize:vertical;min-height:80px; }
+
+    /* ── Empty state ─────────────────────── */
+    .empty { text-align:center;padding:60px 20px;color:var(--muted); }
+    .empty .empty-icon { font-size:48px;margin-bottom:12px; }
+    .empty p { font-size:.9rem; }
+
+    /* ── Loading ─────────────────────────── */
+    .loading { text-align:center;padding:40px;color:var(--muted); }
+    .spin { display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ── Toast ───────────────────────────── */
+    #toast { position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:10px;pointer-events:none; }
+    .toast-item { padding:12px 20px;border-radius:10px;font-size:.875rem;font-weight:500;animation:toastIn .3s ease; pointer-events:all; }
+    .toast-success { background:#1a3a28;border:1px solid #4ade80;color:#4ade80; }
+    .toast-error { background:#3a1a1a;border:1px solid #f87171;color:#f87171; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+    @media (max-width:768px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🏢</div>
+    <span class="brand-name">ApartEase</span>
+  </div>
+  <div class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showSection('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-section">Management</div>
+    <div class="nav-item" onclick="showSection('buildings')">
+      <span class="icon">🏗️</span> Buildings
+    </div>
+    <div class="nav-item" onclick="showSection('apartments')">
+      <span class="icon">🏠</span> Apartments
+    </div>
+    <div class="nav-item" onclick="showSection('tenants')">
+      <span class="icon">👥</span> Tenants
+    </div>
+    <div class="nav-section">Finance & Ops</div>
+    <div class="nav-item" onclick="showSection('payments')">
+      <span class="icon">💳</span> Payments
+      <span class="nav-badge" id="payBadge" style="display:none"></span>
+    </div>
+    <div class="nav-item" onclick="showSection('maintenance')">
+      <span class="icon">🔧</span> Maintenance
+      <span class="nav-badge" id="maintBadge" style="display:none"></span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar" id="userInitial">?</div>
+      <div class="user-info">
+        <div class="name" id="userName">Loading…</div>
+        <div class="role-badge" id="userRole"></div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <button class="notif-btn" title="Notifications">🔔<span class="notif-dot"></span></button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ───────────────────── -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-grid" id="statsGrid">
+        <div class="loading"><div class="spin"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="table-wrap" style="padding:20px">
+          <h4 style="margin-bottom:14px;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em">Recent Payments</h4>
+          <div id="recentPayments"><div class="loading"><div class="spin"></div></div></div>
+        </div>
+        <div class="table-wrap" style="padding:20px">
+          <h4 style="margin-bottom:14px;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em">Open Maintenance</h4>
+          <div id="recentMaint"><div class="loading"><div class="spin"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BUILDINGS ───────────────────── -->
+    <div class="section" id="sec-buildings">
+      <div class="section-header">
+        <h3>Buildings</h3>
+        <button class="btn btn-accent" onclick="openModal('buildingModal')">+ Add Building</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Address</th><th>City</th><th>Floors</th><th>Amenities</th></tr></thead>
+          <tbody id="buildingsTbody"><tr><td colspan="5"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── APARTMENTS ──────────────────── -->
+    <div class="section" id="sec-apartments">
+      <div class="section-header">
+        <h3>Apartments</h3>
+        <button class="btn btn-accent" onclick="openModal('aptModal')">+ Add Apartment</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Unit</th><th>Building</th><th>Floor</th><th>Beds/Bath</th><th>Area</th><th>Rent</th><th>Status</th><th>Tenant</th></tr></thead>
+          <tbody id="aptsTbody"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TENANTS ─────────────────────── -->
+    <div class="section" id="sec-tenants">
+      <div class="section-header"><h3>Tenants</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th></tr></thead>
+          <tbody id="tenantsTbody"><tr><td colspan="5"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PAYMENTS ────────────────────── -->
+    <div class="section" id="sec-payments">
+      <div class="section-header">
+        <h3>Payments</h3>
+        <button class="btn btn-accent" onclick="openModal('payModal')">+ Record Payment</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Amount</th><th>Due Date</th><th>Paid Date</th><th>Status</th><th>Description</th><th>Actions</th></tr></thead>
+          <tbody id="paymentsTbody"><tr><td colspan="7"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── MAINTENANCE ─────────────────── -->
+    <div class="section" id="sec-maintenance">
+      <div class="section-header">
+        <h3>Maintenance Requests</h3>
+        <button class="btn btn-accent" onclick="openModal('maintModal')">+ New Request</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>Priority</th><th>Status</th><th>Apartment</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="maintTbody"><tr><td colspan="6"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── MODALS ───────────────────────────── -->
+
+<!-- Building Modal -->
+<div class="modal-overlay" id="buildingModal">
+  <div class="modal">
+    <h3>Add Building</h3>
+    <div class="form-group"><label>Building Name</label><input id="bName" placeholder="Sunset Towers"/></div>
+    <div class="form-group"><label>Address</label><input id="bAddr" placeholder="123 Main St"/></div>
+    <div class="form-group"><label>City</label><input id="bCity" placeholder="New York"/></div>
+    <div class="form-group"><label>Total Floors</label><input id="bFloors" type="number" value="5"/></div>
+    <div class="form-group"><label>Amenities</label><textarea id="bAmenities" placeholder="Pool, Gym, Parking…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('buildingModal')">Cancel</button>
+      <button class="btn btn-accent" onclick="createBuilding()">Save Building</button>
+    </div>
+  </div>
+</div>
+
+<!-- Apartment Modal -->
+<div class="modal-overlay" id="aptModal">
+  <div class="modal">
+    <h3>Add Apartment</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Unit #</label><input id="aUnit" placeholder="101"/></div>
+      <div class="form-group"><label>Floor</label><input id="aFloor" type="number" value="1"/></div>
+      <div class="form-group"><label>Bedrooms</label><input id="aBeds" type="number" value="1"/></div>
+      <div class="form-group"><label>Bathrooms</label><input id="aBaths" type="number" step="0.5" value="1"/></div>
+      <div class="form-group"><label>Area (sqft)</label><input id="aArea" type="number" value="750"/></div>
+      <div class="form-group"><label>Rent ($/mo)</label><input id="aRent" type="number" value="1200"/></div>
+    </div>
+    <div class="form-group"><label>Building</label><select id="aBuildingId"><option value="">Select…</option></select></div>
+    <div class="form-group"><label>Description</label><textarea id="aDesc" placeholder="Modern unit with city view…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('aptModal')">Cancel</button>
+      <button class="btn btn-accent" onclick="createApartment()">Save Apartment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <h3>Record Payment</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Amount ($)</label><input id="pAmount" type="number" placeholder="1200"/></div>
+      <div class="form-group"><label>Due Date</label><input id="pDue" type="date"/></div>
+    </div>
+    <div class="form-group"><label>Apartment</label><select id="pAptId"><option value="">Select…</option></select></div>
+    <div class="form-group"><label>Tenant</label><select id="pTenantId"><option value="">Select…</option></select></div>
+    <div class="form-group"><label>Description</label><input id="pDesc" placeholder="June 2024 rent"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('payModal')">Cancel</button>
+      <button class="btn btn-accent" onclick="createPayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal-overlay" id="maintModal">
+  <div class="modal">
+    <h3>New Maintenance Request</h3>
+    <div class="form-group"><label>Title</label><input id="mTitle" placeholder="Leaking faucet in kitchen"/></div>
+    <div class="form-group"><label>Description</label><textarea id="mDesc" placeholder="Describe the issue…"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Priority</label>
+        <select id="mPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select>
+      </div>
+      <div class="form-group"><label>Apartment</label><select id="mAptId"><option value="">Select…</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('maintModal')">Cancel</button>
+      <button class="btn btn-accent" onclick="createMaintenance()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let token = localStorage.getItem('token');
+let currentUser = null;
+
+// ── Auth guard ──────────────────────────────────────
+if (!token) { window.location.href = '/'; }
+
+function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }; }
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, { headers: authHeaders(), ...opts });
+  if (res.status === 401) { logout(); }
+  return res;
+}
+
+// ── Toast ───────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Navigation ──────────────────────────────────────
+const sections = ['dashboard','buildings','apartments','tenants','payments','maintenance'];
+const titles = { dashboard:'Dashboard', buildings:'Buildings', apartments:'Apartments', tenants:'Tenants', payments:'Payments', maintenance:'Maintenance Requests' };
+
+function showSection(id) {
+  sections.forEach(s => {
+    document.getElementById('sec-' + s).classList.toggle('active', s === id);
+    document.querySelectorAll('.nav-item').forEach((el, i) => {
+      const text = el.textContent.trim().toLowerCase();
+      if (text.startsWith(id.toLowerCase().split(' ')[0])) el.classList.add('active');
+      else if (text.startsWith(s.toLowerCase()) && s !== id) el.classList.remove('active');
+    });
+  });
+  // fix active nav
+  document.querySelectorAll('.nav-item').forEach(el => {
+    const matches = el.textContent.trim().toLowerCase().includes(id.toLowerCase().replace(' requests',''));
+    el.classList.toggle('active', matches);
+  });
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+  if (id === 'buildings') loadBuildings();
+  if (id === 'apartments') loadApartments();
+  if (id === 'tenants') loadTenants();
+  if (id === 'payments') loadPayments();
+  if (id === 'maintenance') loadMaintenance();
+}
+
+// ── Modal helpers ────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// ── Logout ───────────────────────────────────────────
+function logout() { localStorage.clear(); window.location.href = '/'; }
+
+// ── Badges ───────────────────────────────────────────
+function statusBadge(status) {
+  const map = {
+    available:'badge-green', occupied:'badge-blue', maintenance:'badge-yellow',
+    paid:'badge-green', pending:'badge-yellow', overdue:'badge-red',
+    open:'badge-red', in_progress:'badge-yellow', resolved:'badge-green',
+    admin:'badge-purple', manager:'badge-blue', tenant:'badge-gray',
+    low:'badge-gray', medium:'badge-yellow', high:'badge-red', urgent:'badge-red'
+  };
+  return `<span class="badge ${map[status]||'badge-gray'}">${status.replace('_',' ')}</span>`;
+}
+
+function fmt$(n) { return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+
+// ── INIT ─────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await apiFetch('/api/users/me');
+    currentUser = await r.json();
+    document.getElementById('userName').textContent = currentUser.full_name;
+    document.getElementById('userRole').textContent = currentUser.role;
+    document.getElementById('userInitial').textContent = currentUser.full_name[0].toUpperCase();
+    if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+      document.querySelectorAll('.nav-item').forEach(el => { if (el.textContent.includes('Buildings')) el.style.display='none'; });
+    }
+    loadDashboard();
+  } catch(e) { logout(); }
+}
+
+// ── DASHBOARD ────────────────────────────────────────
+async function loadDashboard() {
+  const [statsRes, payRes, maintRes] = await Promise.all([
+    apiFetch('/api/dashboard/stats'),
+    apiFetch('/api/payments'),
+    apiFetch('/api/maintenance'),
+  ]);
+  const stats = await statsRes.json();
+  const payments = await payRes.json();
+  const maints = await maintRes.json();
+
+  const pendingCount = payments.filter(p => p.status === 'pending').length;
+  const openCount = maints.filter(m => m.status === 'open').length;
+  if (pendingCount > 0) { const b = document.getElementById('payBadge'); b.textContent = pendingCount; b.style.display=''; }
+  if (openCount > 0) { const b = document.getElementById('maintBadge'); b.textContent = openCount; b.style.display=''; }
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card blue"><div class="stat-label">Total Apartments</div><div class="stat-value">${stats.total_apartments}</div><div class="stat-icon">🏠</div><div class="stat-sub">${stats.occupied} occupied</div></div>
+    <div class="stat-card green"><div class="stat-label">Available</div><div class="stat-value">${stats.available}</div><div class="stat-icon">✅</div><div class="stat-sub">Ready to rent</div></div>
+    <div class="stat-card yellow"><div class="stat-label">Tenants</div><div class="stat-value">${stats.total_tenants}</div><div class="stat-icon">👥</div><div class="stat-sub">Active tenants</div></div>
+    <div class="stat-card blue"><div class="stat-label">Monthly Revenue</div><div class="stat-value" style="font-size:1.5rem">${fmt$(stats.monthly_revenue)}</div><div class="stat-icon">💰</div><div class="stat-sub">${stats.pending_payments} pending</div></div>
+    <div class="stat-card red"><div class="stat-label">Open Maintenance</div><div class="stat-value">${stats.open_maintenance}</div><div class="stat-icon">🔧</div><div class="stat-sub">Need attention</div></div>
+    <div class="stat-card yellow"><div class="stat-label">In Maintenance</div><div class="stat-value">${stats.maintenance}</div><div class="stat-icon">🚧</div><div class="stat-sub">Units offline</div></div>
+  `;
+
+  const recent5Pay = payments.slice(-5).reverse();
+  document.getElementById('recentPayments').innerHTML = recent5Pay.length ? recent5Pay.map(p =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:.875rem">${p.description||'Rent Payment'}</div><div style="font-size:.75rem;color:var(--muted)">${fmtDate(p.due_date)}</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><strong>${fmt$(p.amount)}</strong>${statusBadge(p.status)}</div>
+    </div>`
+  ).join('') : '<div class="empty"><div class="empty-icon">💳</div><p>No payments yet</p></div>';
+
+  const recent5Maint = maints.slice(-5).reverse();
+  document.getElementById('recentMaint').innerHTML = recent5Maint.length ? recent5Maint.map(m =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:.875rem">${m.title}</div><div style="font-size:.75rem;color:var(--muted)">${fmtDate(m.created_at)}</div></div>
+      <div style="display:flex;align-items:center;gap:6px">${statusBadge(m.priority)}${statusBadge(m.status)}</div>
+    </div>`
+  ).join('') : '<div class="empty"><div class="empty-icon">🔧</div><p>No requests yet</p></div>';
+}
+
+// ── BUILDINGS ────────────────────────────────────────
+async function loadBuildings() {
+  const r = await apiFetch('/api/buildings');
+  const data = await r.json();
+  const tb = document.getElementById('buildingsTbody');
+  tb.innerHTML = data.length ? data.map(b => `
+    <tr>
+      <td><strong>${b.name}</strong></td>
+      <td>${b.address}</td>
+      <td>${b.city}</td>
+      <td>${b.total_floors}</td>
+      <td>${b.amenities||'—'}</td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🏗️</div><p>No buildings yet</p></div></td></tr>`;
+}
+
+async function createBuilding() {
+  const body = { name:$v('bName'), address:$v('bAddr'), city:$v('bCity'), total_floors:+$v('bFloors'), amenities:$v('bAmenities')||null };
+  const r = await apiFetch('/api/buildings', { method:'POST', body:JSON.stringify(body) });
+  if (r.ok) { closeModal('buildingModal'); toast('Building created!'); loadBuildings(); populateSelects(); } else toast('Failed to create building', 'error');
+}
+
+// ── APARTMENTS ───────────────────────────────────────
+async function loadApartments() {
+  const r = await apiFetch('/api/apartments');
+  const data = await r.json();
+  const tb = document.getElementById('aptsTbody');
+  tb.innerHTML = data.length ? data.map(a => `
+    <tr>
+      <td><strong>#${a.unit_number}</strong></td>
+      <td>${a.building?.name||'—'}</td>
+      <td>${a.floor}</td>
+      <td>${a.bedrooms}bd / ${a.bathrooms}ba</td>
+      <td>${a.area_sqft} sqft</td>
+      <td>${fmt$(a.rent_amount)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${a.tenant?.full_name||'<span style="color:var(--muted)">Vacant</span>'}</td>
+    </tr>`).join('') : `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🏠</div><p>No apartments yet</p></div></td></tr>`;
+}
+
+async function createApartment() {
+  const body = { unit_number:$v('aUnit'), floor:+$v('aFloor'), bedrooms:+$v('aBeds'), bathrooms:+$v('aBaths'), area_sqft:+$v('aArea'), rent_amount:+$v('aRent'), building_id:+$v('aBuildingId'), description:$v('aDesc')||null };
+  const r = await apiFetch('/api/apartments', { method:'POST', body:JSON.stringify(body) });
+  if (r.ok) { closeModal('aptModal'); toast('Apartment created!'); loadApartments(); } else toast('Failed to create apartment', 'error');
+}
+
+// ── TENANTS ──────────────────────────────────────────
+async function loadTenants() {
+  const r = await apiFetch('/api/users');
+  const data = await r.json();
+  const tb = document.getElementById('tenantsTbody');
+  tb.innerHTML = data.length ? data.map(u => `
+    <tr>
+      <td><strong>${u.full_name}</strong></td>
+      <td>${u.email}</td>
+      <td>${u.phone||'—'}</td>
+      <td>${statusBadge(u.role)}</td>
+      <td>${fmtDate(u.created_at)}</td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty"><div class="empty-icon">👥</div><p>No users yet</p></div></td></tr>`;
+}
+
+// ── PAYMENTS ─────────────────────────────────────────
+async function loadPayments() {
+  const r = await apiFetch('/api/payments');
+  const data = await r.json();
+  const tb = document.getElementById('paymentsTbody');
+  tb.innerHTML = data.length ? data.map(p => `
+    <tr>
+      <td>#${p.id}</td>
+      <td><strong>${fmt$(p.amount)}</strong></td>
+      <td>${fmtDate(p.due_date)}</td>
+      <td>${p.paid_date ? fmtDate(p.paid_date) : '—'}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td>${p.description||'—'}</td>
+      <td>${p.status !== 'paid' ? `<button class="btn btn-success" style="padding:5px 12px;font-size:.75rem" onclick="markPaid(${p.id})">Mark Paid</button>` : ''}</td>
+    </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="empty-icon">💳</div><p>No payments yet</p></div></td></tr>`;
+}
+
+async function markPaid(id) {
+  const r = await apiFetch(`/api/payments/${id}/pay`, { method:'PUT' });
+  if (r.ok) { toast('Payment marked as paid!'); loadPayments(); loadDashboard(); } else toast('Failed to update', 'error');
+}
+
+async function createPayment() {
+  const body = { amount:+$v('pAmount'), due_date:new Date($v('pDue')).toISOString(), apartment_id:+$v('pAptId'), tenant_id:+$v('pTenantId'), description:$v('pDesc')||null };
+  const r = await apiFetch('/api/payments', { method:'POST', body:JSON.stringify(body) });
+  if (r.ok) { closeModal('payModal'); toast('Payment recorded!'); loadPayments(); } else toast('Failed to record payment', 'error');
+}
+
+// ── MAINTENANCE ──────────────────────────────────────
+async function loadMaintenance() {
+  const r = await apiFetch('/api/maintenance');
+  const data = await r.json();
+  const tb = document.getElementById('maintTbody');
+  tb.innerHTML = data.length ? data.map(m => `
+    <tr>
+      <td><strong>${m.title}</strong><br/><small style="color:var(--muted)">${m.description.slice(0,60)}…</small></td>
+      <td>${statusBadge(m.priority)}</td>
+      <td>${statusBadge(m.status)}</td>
+      <td>#${m.apartment_id}</td>
+      <td>${fmtDate(m.created_at)}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        ${m.status !== 'resolved' ? `<button class="btn btn-success" style="padding:5px 10px;font-size:.75rem" onclick="resolveMaint(${m.id})">Resolve</button>` : ''}
+        ${m.status === 'open' ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:.75rem" onclick="inProgressMaint(${m.id})">In Progress</button>` : ''}
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔧</div><p>No maintenance requests</p></div></td></tr>`;
+}
+
+async function resolveMaint(id) {
+  await apiFetch(`/api/maintenance/${id}`, { method:'PUT', body:JSON.stringify({status:'resolved'}) });
+  toast('Marked as resolved!'); loadMaintenance(); loadDashboard();
+}
+async function inProgressMaint(id) {
+  await apiFetch(`/api/maintenance/${id}`, { method:'PUT', body:JSON.stringify({status:'in_progress'}) });
+  toast('Status updated!'); loadMaintenance();
+}
+
+async function createMaintenance() {
+  const body = { title:$v('mTitle'), description:$v('mDesc'), priority:$v('mPriority'), apartment_id:+$v('mAptId') };
+  const r = await apiFetch('/api/maintenance', { method:'POST', body:JSON.stringify(body) });
+  if (r.ok) { closeModal('maintModal'); toast('Request submitted!'); loadMaintenance(); } else toast('Failed to submit', 'error');
+}
+
+// ── Populate selects ─────────────────────────────────
+async function populateSelects() {
+  const [bRes, aRes, uRes] = await Promise.all([
+    apiFetch('/api/buildings'), apiFetch('/api/apartments'), apiFetch('/api/users')
+  ]);
+  const buildings = await bRes.json();
+  const apts = await aRes.json();
+  const users = await uRes.json();
+
+  ['aBuildingId'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">Select building…</option>' + buildings.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  });
+  ['pAptId','mAptId'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">Select apartment…</option>' + apts.map(a => `<option value="${a.id}">Unit ${a.unit_number}</option>`).join('');
+  });
+  const pTenant = document.getElementById('pTenantId');
+  if (pTenant) pTenant.innerHTML = '<option value="">Select tenant…</option>' + users.map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+}
+
+function $v(id) { return document.getElementById(id)?.value || ''; }
+
+// ── Start ─────────────────────────────────────────────
+init();
+populateSelects();
+</script>
+</body>
+</html>
