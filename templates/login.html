@@ -149,73 +149,75 @@
   </div>
 
   <script>
-  const API = "http://127.0.0.1:8000";
+const API =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:8000"
+    : "https://apartmeent-managment.onrender.com";
 
-  function showAlert(msg, type = 'error') {
-    const box = document.getElementById('alertBox');
-    box.textContent = msg;
-    box.className = `alert alert-${type}`;
-    box.style.display = 'block';
+function showAlert(msg, type = 'error') {
+  const box = document.getElementById('alertBox');
+  box.textContent = msg;
+  box.className = `alert alert-${type}`;
+  box.style.display = 'block';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  const btn = document.getElementById('loginBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btnText');
+
+  if (!email || !password) {
+    showAlert('Please fill all fields');
+    return;
   }
 
-  async function handleLogin() {
-    const email = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Authenticating...';
 
-    const btn = document.getElementById('loginBtn');
-    const spinner = document.getElementById('spinner');
-    const btnText = document.getElementById('btnText');
+  try {
+    const response = await fetch(`${API}/api/users/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      })
+    });
 
-    if (!email || !password) {
-        showAlert('Please fill all fields');
-        return;
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        typeof data.detail === 'string'
+          ? data.detail
+          : JSON.stringify(data.detail)
+      );
     }
 
-    btn.disabled = true;
-    spinner.style.display = 'block';
-    btnText.textContent = 'Authenticating...';
+    localStorage.setItem('token', data.access_token);
+    localStorage.setItem('user', JSON.stringify(data.user));
 
-    try {
-        const response = await fetch('http://127.0.0.1:8000/api/users/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
+    showAlert('Login successful!', 'success');
 
-        const data = await response.json();
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 1000);
 
-        console.log("Response:", data);
-
-        if (!response.ok) {
-            throw new Error(
-                typeof data.detail === 'string'
-                    ? data.detail
-                    : JSON.stringify(data.detail)
-            );
-        }
-
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        showAlert('Login successful!', 'success');
-
-        setTimeout(() => {
-            window.location.href = './dashboard';
-        }, 1000);
-
-    } catch (error) {
-        console.error(error);
-        showAlert(error.message);
-    } finally {
-        btn.disabled = false;
-        spinner.style.display = 'none';
-        btnText.textContent = 'Sign In';
-    }
+  } catch (error) {
+    console.error(error);
+    showAlert(error.message || 'Cannot connect to server');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Sign In';
+  }
 }
 </script>
 </body>

@@ -378,7 +378,11 @@
 <div id="toast"></div>
 
 <script>
-const API = 'http://localhost:8000';
+const API =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:8000"
+    : "https://apartmeent-managment.onrender.com";
 let token = localStorage.getItem('token');
 let currentUser = null;
 
